@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist Hoàn Chỉnh Bàn Giao Căn Hộ (có Căn Cứ Pháp Lý) - Golden City An Giang</title>
+    <title>Checklist Hoàn Chỉnh Bàn Giao Căn Hộ (cho phép tùy chỉnh) - Golden City An Giang</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,6 +39,7 @@
             position: sticky;
             top: 0;
             z-index: 50;
+            transition: padding 0.4s ease-in-out;
         }
         .action-button {
             transition: all 0.2s ease-in-out;
@@ -66,6 +69,18 @@
             font-style: italic;
             color: #4b5563;
         }
+        /* Styles for collapsible progress panel */
+        #collapsible-content {
+            max-height: 200px; /* A large enough value to show content */
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out;
+            opacity: 1;
+            overflow: hidden;
+        }
+        .sticky-progress.collapsed #collapsible-content {
+            max-height: 0;
+            margin-top: 0;
+            opacity: 0;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -77,18 +92,31 @@
         </header>
 
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6 sticky-progress">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center">
                  <h2 class="text-lg font-semibold text-gray-700">Tiến độ hoàn thành</h2>
                  <span id="progress-text" class="font-bold text-blue-600">0%</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-            </div>
-            <div class="flex justify-end mt-4">
-                 <button onclick="printChecklist()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>In Checklist</span>
-                </button>
+            <div id="collapsible-content">
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-end items-center mt-4 space-x-2">
+                     <span id="zip-status" class="text-sm text-gray-600 mr-2 hidden"></span>
+                     <button onclick="printChecklist()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <span>In Checklist</span>
+                    </button>
+                    <button id="zip-btn" onclick="downloadAllMediaAsZip()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
+                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Tải ZIP Bằng Chứng</span>
+                    </button>
+                     <button onclick="openDraftEmailModal()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
+                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 2l7.997 3.884A2 2 0 0019 7.616V16a2 2 0 01-2 2H3a2 2 0 01-2-2V7.616a2 2 0 001.003-1.732zM10 4.268L3.003 7.616l6.997 3.498 6.997-3.498L10 4.268zM3 9.416l6.997 3.498V16H3V9.416zm13.003 0L10 12.914V16h6.997V9.416z"></path></svg>
+                        <span>Soạn Thảo Email</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -107,7 +135,7 @@
             </div>
           <div class="mt-2 px-7 py-3 text-left">
             <p class="text-sm text-gray-600 mb-4">Gemini sẽ giúp bạn soạn thảo một văn bản/email trang trọng dựa trên các vấn đề bạn đã phát hiện. Vui lòng chọn các nội dung cần đưa vào văn bản:</p>
-            <div id="issues-list" class="space-y-2 mb-4"></div>
+            <div id="issues-list" class="space-y-2 mb-4 max-h-48 overflow-y-auto"></div>
             <textarea id="custom-issue" class="w-full h-20 p-2 border rounded-md" placeholder="Thêm các vấn đề khác hoặc yêu cầu cụ thể của bạn ở đây..."></textarea>
             <div id="gemini-result-container" class="mt-4 hidden">
                  <h4 class="font-semibold text-gray-800 mb-2">Văn bản do Gemini đề xuất:</h4>
@@ -168,157 +196,143 @@
     <script>
         const checklistData = [
             {
-                id: 'section0',
+                id: '0_phap-ly-ho-so',
                 title: '0️⃣ Kiểm Tra Pháp Lý & Hồ Sơ (QUAN TRỌNG NHẤT)',
                 items: [
-                    { id: '0-1', text: 'Kiểm tra Điều kiện Bàn giao của Dự án', type: 'warning', isIssue: true, 
-                      note: `<strong>Yêu cầu CĐT cung cấp (bản gốc để đối chiếu và bản photo):</strong>
-                             <ul class="list-disc pl-5">
-                                 <li><strong>Văn bản chấp thuận kết quả nghiệm thu</strong> của Sở Xây dựng để đưa công trình vào sử dụng.</li>
-                                 <li><strong>Biên bản nghiệm thu hoàn thành hạng mục PCCC</strong> của Cảnh sát PCCC.</li>
-                             </ul>
-                             <strong>Bất lợi cần tránh:</strong> Tuyệt đối không nhận nhà nếu thiếu các văn bản trên. Việc nhận bàn giao khi chưa đủ điều kiện pháp lý sẽ đẩy rủi ro về phía bạn.
-                             <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 125 Luật Xây dựng 2014; Điều 13 Luật Kinh doanh BĐS 2014; Điều 7 HĐMB.</span>`
+                    { 
+                        id: '0-1', 
+                        title: 'Điều kiện Bàn giao của Dự án',
+                        note: `<strong>Yêu cầu CĐT cung cấp (bản gốc để đối chiếu và bản photo):</strong>
+                               <ul class="list-disc pl-5">
+                                   <li><strong>Văn bản chấp thuận kết quả nghiệm thu</strong> của Sở Xây dựng để đưa công trình vào sử dụng.</li>
+                                   <li><strong>Biên bản nghiệm thu hoàn thành hạng mục PCCC</strong> của Cảnh sát PCCC.</li>
+                               </ul>
+                               <strong>Bất lợi cần tránh:</strong> Tuyệt đối không nhận nhà nếu thiếu các văn bản trên. Việc nhận bàn giao khi chưa đủ điều kiện pháp lý sẽ đẩy rủi ro về phía bạn.
+                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 125 Luật Xây dựng 2014; Điều 13 Luật Kinh doanh BĐS 2014; Điều 7 HĐMB.</span>`,
+                        signs: [{ id: '0-1-sign-1', text: 'CĐT không cung cấp đủ giấy tờ', isIssue: true }],
+                        symptoms: [{ id: '0-1-symptom-1', text: 'Rủi ro pháp lý, không làm được sổ hồng', isIssue: true }]
                     },
-                    { id: '0-2', text: 'Đối chiếu Hợp đồng và các Phụ lục', type: 'info', isIssue: false,
-                      note: `<strong>Cần chuẩn bị:</strong> Bản gốc Hợp đồng mua bán (HĐMB) và tất cả các phụ lục đã ký.<br>
-                             <strong>Lưu ý đặc biệt:</strong> Phụ lục 1 (Danh mục vật liệu) và Phụ lục 2 (Tiến độ thanh toán) là cơ sở để kiểm tra và đối chiếu.
-                             <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 1, Khoản 1e HĐMB.</span>`
+                    { 
+                        id: '0-2', 
+                        title: 'Đối chiếu Hợp đồng và các Phụ lục',
+                        note: `<strong>Cần chuẩn bị:</strong> Bản gốc Hợp đồng mua bán (HĐMB) và tất cả các phụ lục đã ký.<br>
+                               <strong>Lưu ý đặc biệt:</strong> Phụ lục 1 (Danh mục vật liệu) và Phụ lục 2 (Tiến độ thanh toán) là cơ sở để kiểm tra và đối chiếu.
+                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 1, Khoản 1e HĐMB.</span>`,
+                        signs: [{ id: '0-2-sign-1', text: 'Thông tin trong các văn bản không khớp', isIssue: true }],
+                        symptoms: [{ id: '0-2-symptom-1', text: 'Tranh chấp về sau', isIssue: true }]
                     },
-                    { id: '0-3', text: 'Kiểm tra nội dung Biên bản Bàn giao', type: 'warning', isIssue: true,
-                      note: `<strong>Trước khi ký, phải đảm bảo:</strong>
-                             <ul class="list-disc pl-5">
-                                 <li>Biên bản phải ghi đúng thông tin căn hộ, thông tin của bạn.</li>
-                                 <li>Mọi sai sót, lỗi kỹ thuật phải được liệt kê chi tiết (xem các mục dưới).</li>
-                                 <li>Phải có cam kết về <strong>ngày tháng cụ thể</strong> khắc phục cho từng lỗi.</li>
-                             </ul>
-                             <strong>Bất lợi cần tránh:</strong> Không ký vào biên bản trống hoặc biên bản ghi nội dung chung chung như "bàn giao đúng hiện trạng". Mọi cam kết miệng đều không có giá trị.
-                             <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 7, Khoản 4 HĐMB.</span>`
+                    { 
+                        id: '0-3', 
+                        title: 'Nội dung Biên bản Bàn giao',
+                        note: `<strong>Trước khi ký, phải đảm bảo:</strong>
+                               <ul class="list-disc pl-5">
+                                   <li>Biên bản phải ghi đúng thông tin căn hộ, thông tin của bạn.</li>
+                                   <li>Mọi sai sót, lỗi kỹ thuật phải được liệt kê chi tiết.</li>
+                                   <li>Phải có cam kết về <strong>ngày tháng cụ thể</strong> khắc phục cho từng lỗi.</li>
+                               </ul>
+                               <strong>Bất lợi cần tránh:</strong> Không ký vào biên bản trống hoặc biên bản ghi nội dung chung chung như "bàn giao đúng hiện trạng". Mọi cam kết miệng đều không có giá trị.
+                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 7, Khoản 4 HĐMB.</span>`,
+                        signs: [{ id: '0-3-sign-1', text: 'Biên bản ghi chung chung, không chi tiết lỗi', isIssue: true }],
+                        symptoms: [{ id: '0-3-symptom-1', text: 'Mất quyền yêu cầu sửa chữa', isIssue: true }]
                     }
                 ]
             },
             {
-                id: 'section1',
+                id: '1_kiem-tra-thuc-te-can-ho',
                 title: '1️⃣ Kiểm Tra Thực Tế Căn Hộ',
                 items: [
                     {
-                        id: '1-1', text: 'Diện tích thông thủy', isIssue: true,
-                        note: `<strong>Thiết bị kiểm tra:</strong> thước laser, thước dây.<br>
-                               <strong>Dấu hiệu:</strong> sai diện tích, mép tường không vuông, chiều dài ngắn hơn bản vẽ.<br>
-                               <strong>Triệu chứng:</strong> khó kê nội thất, mất diện tích sử dụng.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 1, Khoản 1b HĐMB (quy định về chênh lệch diện tích +/- 1%).</span>`
+                        id: '1-1', title: 'Diện tích thông thủy',
+                        note: `<strong>Thiết bị kiểm tra:</strong> thước laser, thước dây.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 1, Khoản 1b HĐMB (quy định về chênh lệch diện tích +/- 1%).</span>`,
+                        signs: [
+                            { id: '1-1-sign-1', text: 'Sai diện tích so với hợp đồng', isIssue: true },
+                            { id: '1-1-sign-2', text: 'Mép tường không vuông', isIssue: true },
+                            { id: '1-1-sign-3', text: 'Chiều dài/rộng ngắn hơn bản vẽ', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '1-1-symptom-1', text: 'Khó kê nội thất', isIssue: true },
+                            { id: '1-1-symptom-2', text: 'Mất diện tích sử dụng', isIssue: true }
+                        ]
                     },
                     {
-                        id: '1-2', text: 'Tường, trần, sàn', isIssue: true,
-                        note: `<strong>Thành phần:</strong> lớp sơn, gạch lát, trần thạch cao.<br>
-                               <strong>Dấu hiệu:</strong> nứt chân tường, ố mốc, phồng rộp, sàn bị bộp (rỗng).<br>
-                               <strong>Triệu chứng:</strong> thấm nước, bong tróc, xuống cấp nhanh.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB; Điều 8 HĐMB (về bảo hành).</span>`
+                        id: '1-2', title: 'Tường, trần, sàn',
+                        note: `<strong>Thành phần:</strong> lớp sơn, gạch lát, trần thạch cao.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB; Điều 8 HĐMB (về bảo hành).</span>`,
+                        signs: [
+                            { id: '1-2-sign-1', text: 'Nứt chân tường, nứt tường', isIssue: true },
+                            { id: '1-2-sign-2', text: 'Ố mốc, thấm nước', isIssue: true },
+                            { id: '1-2-sign-3', text: 'Sơn phồng rộp, không đều màu', isIssue: true },
+                            { id: '1-2-sign-4', text: 'Sàn gạch bị bộp (rỗng), sứt mẻ', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '1-2-symptom-1', text: 'Thấm nước, ẩm mốc', isIssue: true },
+                            { id: '1-2-symptom-2', text: 'Bong tróc sơn, gạch', isIssue: true },
+                            { id: '1-2-symptom-3', text: 'Xuống cấp nhanh, mất thẩm mỹ', isIssue: true }
+                        ]
                     },
                     {
-                        id: '1-3', text: 'Cửa đi, cửa sổ', isIssue: true,
-                        note: `<strong>Thành phần:</strong> bản lề, khoá, kính, ron.<br>
-                               <strong>Dấu hiệu:</strong> kẹt, ron hở, kính xước, bản lề xệ.<br>
-                               <strong>Triệu chứng:</strong> không an toàn, thất thoát nhiệt, thấm nước khi mưa.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`
-                    },
-                    {
-                        id: '1-4', text: 'Ban công/logia', isIssue: true,
-                        note: `<strong>Thành phần:</strong> lan can, gạch nền, thoát sàn.<br>
-                               <strong>Dấu hiệu:</strong> lan can lỏng, thoát nước chậm.<br>
-                               <strong>Triệu chứng:</strong> nước tràn ngược, nguy hiểm rơi ngã.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 8 HĐMB (bảo hành kết cấu).</span>`
-                    },
-                    {
-                        id: '1-5', text: 'Nhà vệ sinh', isIssue: true,
-                        note: `<strong>Thành phần:</strong> lavabo, vòi sen, bồn cầu, quạt hút.<br>
-                               <strong>Dấu hiệu:</strong> bồn cầu rò rỉ, thoát chậm, quạt hỏng, thiết bị sai chủng loại.<br>
-                               <strong>Triệu chứng:</strong> hôi, thấm sang căn khác.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`
-                    },
-                     {
-                        id: '1-6', text: 'Bản vẽ hoàn công', isIssue: true,
-                        note: `<strong>Thành phần:</strong> sơ đồ vị trí, kích thước, thiết bị.<br>
-                               <strong>Dấu hiệu:</strong> sai kích thước, lắp sai vị trí ổ cắm, đầu chờ so với bản vẽ.<br>
-                               <strong>Triệu chứng:</strong> vướng pháp lý, khó khăn khi sửa chữa, lắp đặt nội thất.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 4, Khoản 2a HĐMB.</span>`
+                        id: '1-3', title: 'Cửa đi, cửa sổ',
+                        note: `<strong>Thành phần:</strong> bản lề, khoá, kính, ron.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`,
+                        signs: [
+                            { id: '1-3-sign-1', text: 'Cửa bị kẹt, khó đóng mở', isIssue: true },
+                            { id: '1-3-sign-2', text: 'Ron cao su bị hở, rách', isIssue: true },
+                            { id: '1-3-sign-3', text: 'Kính bị xước, nứt', isIssue: true },
+                            { id: '1-3-sign-4', text: 'Bản lề, khóa bị xệ, lỏng lẻo', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '1-3-symptom-1', text: 'Không an toàn, chống trộm kém', isIssue: true },
+                            { id: '1-3-symptom-2', text: 'Thất thoát nhiệt (máy lạnh)', isIssue: true },
+                            { id: '1-3-symptom-3', text: 'Thấm nước, ồn', isIssue: true }
+                        ]
                     }
                 ]
             },
             {
-                id: 'section2',
+                id: '2_kiem-tra-he-thong-ky-thuat',
                 title: '🔌 Kiểm Tra Hệ Thống Kỹ Thuật',
                 items: [
                      {
-                        id: '2-1', text: 'Hệ thống điện', isIssue: true,
-                        note: `<strong>Thành phần:</strong> CB, ổ cắm, công tắc, đèn.<br>
-                               <strong>Dấu hiệu:</strong> ổ cắm nóng, công tắc lỏng, đèn chớp, CB không có ghi chú.<br>
-                               <strong>Triệu chứng:</strong> chập điện, cháy nổ.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`
+                        id: '2-1', title: 'Hệ thống điện',
+                        note: `<strong>Thành phần:</strong> CB, ổ cắm, công tắc, đèn.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`,
+                        signs: [
+                            { id: '2-1-sign-1', text: 'Ổ cắm, công tắc bị lỏng', isIssue: true },
+                            { id: '2-1-sign-2', text: 'Đèn chớp nháy, không sáng', isIssue: true },
+                            { id: '2-1-sign-3', text: 'CB nhảy bất thường', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '2-1-symptom-1', text: 'Nguy cơ chập điện', isIssue: true },
+                            { id: '2-1-symptom-2', text: 'Nguy cơ cháy nổ', isIssue: true }
+                        ]
                     },
                     {
-                        id: '2-2', text: 'Hệ thống cấp thoát nước', isIssue: true,
-                        note: `<strong>Thành phần:</strong> đường ống cấp, thoát, van, đồng hồ.<br>
-                               <strong>Dấu hiệu:</strong> rò rỉ, nước yếu, van kẹt, thoát nước chậm.<br>
-                               <strong>Triệu chứng:</strong> ẩm mốc, chi phí nước cao.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB; Điều 8 HĐMB.</span>`
+                        id: '2-2', title: 'Hệ thống cấp thoát nước',
+                        note: `<strong>Thành phần:</strong> đường ống cấp, thoát, van, đồng hồ.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB; Điều 8 HĐMB.</span>`,
+                        signs: [
+                            { id: '2-2-sign-1', text: 'Rò rỉ nước tại các đầu nối, vòi', isIssue: true },
+                            { id: '2-2-sign-2', text: 'Áp lực nước yếu', isIssue: true },
+                            { id: '2-2-sign-3', text: 'Van khóa bị kẹt, không hoạt động', isIssue: true },
+                            { id: '2-2-sign-4', text: 'Nước thoát chậm, có mùi hôi', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '2-2-symptom-1', text: 'Gây ẩm mốc tường, sàn', isIssue: true },
+                            { id: '2-2-symptom-2', text: 'Tăng chi phí nước bất thường', isIssue: true }
+                        ]
                     },
                     {
-                        id: '2-3', text: 'Hệ thống PCCC trong căn hộ', isIssue: true,
-                        note: `<strong>Thành phần:</strong> đầu báo khói, đầu phun sprinkler.<br>
-                               <strong>Dấu hiệu:</strong> đầu báo bụi bẩn, bị sơn phủ, đầu phun có dấu hiệu rỉ nước.<br>
-                               <strong>Triệu chứng:</strong> không hoạt động khi có sự cố, gây nguy hiểm.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB; Luật PCCC.</span>`
-                    },
-                    {
-                        id: '2-4', text: 'Cổng điện & ống đồng máy lạnh', isIssue: true,
-                        note: `<strong>Cách kiểm tra:</strong> đo điện áp, kiểm tra ống đồng có bị móp, gãy.<br>
-                               <strong>Dấu hiệu:</strong> không có điện, ống bị bẹp, gãy.<br>
-                               <strong>Triệu chứng:</strong> không chạy, rò gas, hỏng thiết bị.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB (ghi rõ chỉ đặt ống chờ, không cấp dây).</span>`
-                    },
-                    {
-                        id: '2-5', text: 'Đầu chờ máy giặt, bếp, internet', isIssue: true,
-                        note: `<strong>Cách kiểm tra:</strong> xác nhận đúng vị trí và số lượng đầu chờ cấp/thoát nước, ổ cắm công suất lớn, cổng mạng/TV.<br>
-                               <strong>Dấu hiệu:</strong> thiếu, sai vị trí so với thiết kế.<br>
-                               <strong>Triệu chứng:</strong> phải đi lại đường dây, tốn kém, mất thẩm mỹ.
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`
-                    }
-                ]
-            },
-            {
-                id: 'section3',
-                title: '🏢 Kiểm Tra Không Gian Chung',
-                items: [
-                    { id: '3-1', text: 'Hành lang, thang máy, thang bộ', isIssue: true, note: '<strong>Dấu hiệu:</strong> đèn cháy, tường bẩn, thang máy kêu, cửa thoát hiểm bị chặn hoặc không tự đóng. <br><strong>Triệu chứng:</strong> bất tiện, thiếu an toàn khi có sự cố.' },
-                    { id: '3-2', text: 'Phòng sinh hoạt cộng đồng, phòng rác', isIssue: true, note: '<strong>Dấu hiệu:</strong> phòng rác hôi, không có hệ thống thông gió, phòng cộng đồng bừa bộn, thiếu trang thiết bị. <br><strong>Triệu chứng:</strong> ảnh hưởng chất lượng sống, vệ sinh môi trường.' },
-                    { id: '3-3', text: 'Hệ thống PCCC chung', isIssue: true, note: '<strong>Dấu hiệu:</strong> hộp cứu hỏa không có vòi/lăng, chuông báo cháy không hoạt động (khi thử nghiệm), bình chữa cháy hết hạn. <br><strong>Triệu chứng:</strong> cực kỳ nguy hiểm khi có cháy nổ.' }
-                ]
-            },
-            {
-                id: 'section4',
-                title: '✍️ Ký Kết & Các Vấn Đề Cần Tránh',
-                items: [
-                    { id: '4-1', text: 'Bất lợi cần tránh khi ký', type: 'warning', isIssue: true, note: `<strong>Tuyệt đối không:</strong>
-                               <ul class="list-disc pl-5">
-                                   <li>Ký khi thiếu các hồ sơ pháp lý quan trọng (mục 0-1).</li>
-                                   <li>Ký vào cam kết "đã đủ điều kiện" hoặc "không khiếu nại" khi thực tế còn lỗi.</li>
-                                   <li>Đóng các khoản phí không có trong hợp đồng mà không có giải trình và văn bản hợp lệ.</li>
-                               </ul>
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 5 HĐMB (Quyền của Bên Mua).</span>` },
-                    { id: '4-2', text: 'Yêu cầu về khắc phục & bảo hành', type: 'warning', isIssue: false, note: `<strong>Phải ghi rõ trong biên bản:</strong>
-                               <ul class="list-disc pl-5">
-                                   <li>Danh sách tất cả các lỗi, hạng mục, tình trạng.</li>
-                                   <li><strong>Thời hạn khắc phục cụ thể (ngày/tháng/năm)</strong> cho từng lỗi.</li>
-                                   <li>Thông tin người phụ trách của CĐT và số điện thoại liên hệ.</li>
-                               </ul>
-                               <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 8, Khoản 4 HĐMB (trách nhiệm bảo hành).</span>` },
-                    { id: '4-3', text: 'Yêu cầu về các mốc thời gian khác', type: 'info', isIssue: false, note: 'Yêu cầu CĐT cung cấp lộ trình và ngày hẹn dự kiến (tháng/năm) sẽ hoàn tất thủ tục và bàn giao Giấy chứng nhận quyền sở hữu. <span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Điều 4, Khoản 2h HĐMB.</span>' },
-                    { 
-                        id: '4-4', 
-                        text: 'Soạn thảo văn bản yêu cầu chính thức', 
-                        note: 'Nếu CĐT không hợp tác hoặc có nhiều vấn đề nghiêm trọng, hãy sử dụng tính năng "Soạn thảo với AI" để tạo một văn bản khiếu nại/yêu cầu chính thức gửi cho CĐT.', 
-                        geminiAction: 'draftEmail'
+                        id: '2-3', title: 'Cổng/đường dây lắp sẵn',
+                        note: `<strong>Thành phần:</strong> Đầu chờ máy lạnh, máy giặt, bếp, mạng, TV.<br><span class="legal-ref"><strong>Căn cứ pháp lý:</strong> Phụ lục 1 HĐMB.</span>`,
+                        signs: [
+                            { id: '2-3-sign-1', text: 'Cổng điện không có điện, sai pha', isIssue: true },
+                            { id: '2-3-sign-2', text: 'Ống đồng máy lạnh bị bẹp, gãy', isIssue: true },
+                            { id: '2-3-sign-3', text: 'Đầu cấp nước máy giặt rỉ nước', isIssue: true },
+                            { id: '2-3-sign-4', text: 'Ống thoát nước máy giặt tắc', isIssue: true },
+                            { id: '2-3-sign-5', text: 'Ổ cắm bếp bị lỏng, nóng', isIssue: true },
+                            { id: '2-3-sign-6', text: 'Cổng mạng/TV không có tín hiệu', isIssue: true }
+                        ],
+                        symptoms: [
+                            { id: '2-3-symptom-1', text: 'Không lắp được thiết bị', isIssue: true },
+                            { id: '2-3-symptom-2', text: 'Hỏng thiết bị (rò gas, chập điện)', isIssue: true },
+                            { id: '2-3-symptom-3', text: 'Ngập sàn, ẩm mốc', isIssue: true }
+                        ]
                     }
                 ]
             }
@@ -326,8 +340,9 @@
 
         const container = document.getElementById('checklist-container');
         let state = {}; 
+        let customItems = {};
         let currentStream;
-        let photoForItem = '';
+        let photoForItem = {};
         
         let mediaRecorder;
         let recordedChunks = [];
@@ -337,30 +352,41 @@
         let currentGallery = [];
         let currentImageIndex = 0;
 
-        function getNoteClass(type) {
-            switch (type) {
-                case 'warning': return 'bg-red-50 border-l-4 border-red-400 text-red-700';
-                case 'info': return 'bg-blue-50 border-l-4 border-blue-400 text-blue-700';
-                default: return 'bg-gray-50 border-l-4 border-gray-300 text-gray-700';
+        function sanitizeForFilename(str) {
+            if (!str) return '';
+            const a = 'àáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỵỷỹ';
+            const b = 'aaaaaeeeiioooouuadiuouaaaaaaaaaaaaaaaeeeeeeeeeeiiooooooooooooooooouuuuuuuuuuyyyyy';
+            let result = str.toLowerCase();
+            for (let i = 0; i < a.length; i++) {
+                result = result.replace(new RegExp(a[i], 'g'), b[i]);
             }
+            return result.replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
         }
-        
+
         function renderChecklist() {
             let totalItems = 0;
             let checkedItems = 0;
             container.innerHTML = '';
 
-            const processItem = (item) => {
-                if (item.isIssue !== false) { // Only count checkable items
+            const combinedData = getCombinedData();
+
+            const countItems = (item) => {
+                if (item.isIssue) {
                     totalItems++;
                     if (state[item.id] && state[item.id].checked) {
                         checkedItems++;
                     }
                 }
             };
-            checklistData.forEach(section => section.items.forEach(processItem));
+            
+            combinedData.forEach(section => {
+                section.items.forEach(item => {
+                    if (item.signs) item.signs.forEach(countItems);
+                    if (item.symptoms) item.symptoms.forEach(countItems);
+                });
+            });
 
-            checklistData.forEach(section => {
+            combinedData.forEach(section => {
                 const sectionDiv = document.createElement('details');
                 sectionDiv.className = 'bg-white rounded-xl shadow-md overflow-hidden';
                 sectionDiv.open = true;
@@ -374,79 +400,147 @@
                 contentDiv.className = 'p-4 sm:p-5 border-t border-gray-200 divide-y divide-gray-200';
                 
                 section.items.forEach(item => {
-                    contentDiv.appendChild(createChecklistItem(item));
+                    contentDiv.appendChild(createChecklistGroup(section, item));
                 });
                 sectionDiv.appendChild(contentDiv);
                 container.appendChild(sectionDiv);
             });
             updateProgress(checkedItems, totalItems);
         }
-
-        function createChecklistItem(item) {
-            const itemState = state[item.id] || { checked: false, media: [] };
-            const isChecked = itemState.checked;
-            
-            const itemDiv = document.createElement('div');
-            itemDiv.className = `checklist-item py-4 ${isChecked ? 'checked' : ''}`;
-            
-            let geminiButtonHtml = '';
-            if (item.geminiAction === 'draftEmail') {
-                geminiButtonHtml = `<button onclick="openDraftEmailModal()" title="Soạn thảo với AI" class="action-button ml-4 p-2 bg-gradient-to-r from-purple-400 to-blue-500 text-white rounded-full shadow-md text-xs">✨</button>`;
-            }
-
-            let mediaSectionHtml = '<div class="mt-3 pl-8 thumbnail-container">';
-            if (item.isIssue !== false) {
-                if (itemState.media && itemState.media.length > 0) {
-                    mediaSectionHtml += '<div class="flex flex-wrap gap-3 items-center">';
-                    itemState.media.forEach(mediaFile => {
-                        const playIcon = mediaFile.type === 'video' ? `<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20"><svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg></div>` : '';
-                        mediaSectionHtml += `
-                            <div class="relative group">
-                                <img src="${mediaFile.thumbnail}" onclick="showMediaPreview('${item.id}', '${mediaFile.filename}')" class="h-20 w-20 rounded-lg object-cover cursor-pointer shadow-md hover:shadow-xl transition-shadow" alt="${mediaFile.filename}">
-                                ${playIcon}
-                                <button onclick="deleteMedia('${item.id}', '${mediaFile.filename}')" class="delete-btn absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
-                            </div>
-                        `;
-                    });
-                     mediaSectionHtml += `
-                        <div onclick="openCameraModal('${item.id}', '${item.text}')" title="Thêm ghi nhận" class="group h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-100 hover:border-gray-400 transition-colors">
-                            <svg class="w-8 h-8 text-gray-400 group-hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        </div>
-                    `;
-                    mediaSectionHtml += '</div>';
-                } else {
-                     mediaSectionHtml += `
-                        <button onclick="openCameraModal('${item.id}', '${item.text}')" class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium cursor-pointer hover:bg-gray-200">
-                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span>Thêm ảnh/video ghi nhận</span>
-                        </button>
-                     `;
+        
+        function getCombinedData() {
+            // Deep copy to avoid modifying the original checklistData
+            const combined = JSON.parse(JSON.stringify(checklistData));
+            for (const itemId in customItems) {
+                const itemRef = combined.flatMap(s => s.items).find(i => i.id === itemId);
+                if (itemRef) {
+                    if (customItems[itemId].signs) {
+                        if (!itemRef.signs) itemRef.signs = [];
+                        itemRef.signs.push(...customItems[itemId].signs);
+                    }
+                    if (customItems[itemId].symptoms) {
+                         if (!itemRef.symptoms) itemRef.symptoms = [];
+                        itemRef.symptoms.push(...customItems[itemId].symptoms);
+                    }
                 }
             }
-            mediaSectionHtml += '</div>';
-            
-            const checkboxHtml = item.isIssue !== false 
-                ? `<input type="checkbox" id="${item.id}" class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0" ${isChecked ? 'checked' : ''}>`
-                : `<div class="h-5 w-5 flex-shrink-0"></div>`;
+            return combined;
+        }
 
-            itemDiv.innerHTML = `
-                <div class="flex items-start space-x-4">
-                    ${checkboxHtml}
-                    <div class="flex-1 flex justify-between items-center">
-                        <label for="${item.id}" class="font-medium text-gray-900 ${item.isIssue !== false ? 'cursor-pointer' : ''}">${item.text}</label>
-                        ${geminiButtonHtml}
+        function createChecklistGroup(section, item) {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'py-4';
+            
+            let signsHtml = '';
+            if (item.signs && item.signs.length > 0) {
+                signsHtml += '<h4 class="font-semibold text-gray-800 mt-3 mb-2">Dấu hiệu:</h4>';
+                item.signs.forEach(sign => {
+                    signsHtml += createDetailItem(section, item, sign);
+                });
+            }
+
+            let symptomsHtml = '';
+            if (item.symptoms && item.symptoms.length > 0) {
+                symptomsHtml += '<h4 class="font-semibold text-gray-800 mt-3 mb-2">Triệu chứng:</h4>';
+                item.symptoms.forEach(symptom => {
+                    symptomsHtml += createDetailItem(section, item, symptom);
+                });
+            }
+            
+            const addSignHtml = `
+                <div class="mt-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="input-signs-${item.id}" class="w-full p-1.5 border rounded-md text-sm" placeholder="Thêm dấu hiệu khác...">
+                        <button onclick="addCustomDetail('${item.id}', 'signs')" class="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-600">Thêm</button>
                     </div>
+                </div>`;
+                
+            const addSymptomHtml = `
+                 <div class="mt-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="input-symptoms-${item.id}" class="w-full p-1.5 border rounded-md text-sm" placeholder="Thêm triệu chứng khác...">
+                        <button onclick="addCustomDetail('${item.id}', 'symptoms')" class="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-600">Thêm</button>
+                    </div>
+                </div>`;
+
+            groupDiv.innerHTML = `
+                <h3 class="text-lg font-bold text-gray-900">${item.title}</h3>
+                ${item.note ? `<div class="note text-sm mt-2 p-3 rounded-md bg-gray-50 border-l-4 border-gray-300 text-gray-700">${item.note}</div>` : ''}
+                <div class="pl-4 mt-2">
+                    ${signsHtml}
+                    ${addSignHtml}
+                    ${symptomsHtml}
+                    ${addSymptomHtml}
                 </div>
-                <div class="pl-9">
-                    ${item.note ? `<div class="note text-sm mt-2 p-3 rounded-md ${getNoteClass(item.type)}">${item.note}</div>` : ''}
+            `;
+            return groupDiv;
+        }
+
+        function createDetailItem(section, item, detail) {
+            const itemState = state[detail.id] || { checked: false, media: [] };
+            const isChecked = itemState.checked;
+
+            let mediaSectionHtml = '<div class="mt-2 pl-8 thumbnail-container">';
+            if (itemState.media && itemState.media.length > 0) {
+                mediaSectionHtml += '<div class="flex flex-wrap gap-2 items-center">';
+                itemState.media.forEach(mediaFile => {
+                    const playIcon = mediaFile.type === 'video' ? `<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-md"><svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg></div>` : '';
+                    mediaSectionHtml += `
+                        <div class="relative group">
+                            <img src="${mediaFile.thumbnail}" onclick="showMediaPreview('${detail.id}', '${mediaFile.filename}')" class="h-16 w-16 rounded-lg object-cover cursor-pointer shadow-md hover:shadow-xl transition-shadow" alt="${mediaFile.filename}">
+                            ${playIcon}
+                            <button onclick="deleteMedia('${detail.id}', '${mediaFile.filename}')" class="delete-btn absolute -top-1 -right-1 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                        </div>
+                    `;
+                });
+                mediaSectionHtml += '</div>';
+            }
+            mediaSectionHtml += '</div>';
+
+            return `
+                <div class="checklist-item py-2 ${isChecked ? 'checked' : ''}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="${detail.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0" onchange="handleCheck('${detail.id}', this.checked)" ${isChecked ? 'checked' : ''}>
+                            <label for="${detail.id}" class="text-gray-800 cursor-pointer">${detail.text}</label>
+                        </div>
+                        <button onclick="openCameraModal('${section.id}', '${item.id}', '${detail.id}', '${detail.text}')" title="Thêm ghi nhận" class="p-1.5 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </button>
+                    </div>
                     ${mediaSectionHtml}
                 </div>
             `;
-
-            if (item.isIssue !== false) {
-                itemDiv.querySelector('input').addEventListener('change', (e) => handleCheck(e.target.id, e.target.checked));
+        }
+        
+        function addCustomDetail(itemId, type) {
+            const inputId = `input-${type}-${itemId}`;
+            const input = document.getElementById(inputId);
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Vui lòng nhập nội dung.');
+                return;
             }
-            return itemDiv;
+            
+            if (!customItems[itemId]) {
+                customItems[itemId] = { signs: [], symptoms: [] };
+            }
+            if (!customItems[itemId][type]) {
+                 customItems[itemId][type] = [];
+            }
+            
+            const newDetail = {
+                id: `${itemId}-custom-${type}-${Date.now()}`,
+                text: text,
+                isIssue: true
+            };
+            
+            customItems[itemId][type].push(newDetail);
+            localStorage.setItem('customChecklistItems', JSON.stringify(customItems));
+            
+            input.value = '';
+            renderChecklist();
         }
 
         function handleCheck(id, isChecked) {
@@ -458,13 +552,13 @@
             renderChecklist();
         }
         
-        function deleteMedia(itemId, filename) {
-            if (state[itemId] && state[itemId].media) {
-                const mediaFile = state[itemId].media.find(m => m.filename === filename);
+        function deleteMedia(detailId, filename) {
+            if (state[detailId] && state[detailId].media) {
+                const mediaFile = state[detailId].media.find(m => m.filename === filename);
                 if (mediaFile && mediaFile.type === 'video') {
                     URL.revokeObjectURL(mediaFile.dataUrl);
                 }
-                state[itemId].media = state[itemId].media.filter(m => m.filename !== filename);
+                state[detailId].media = state[detailId].media.filter(m => m.filename !== filename);
                 localStorage.setItem('checklistState', JSON.stringify(state));
                 renderChecklist();
             }
@@ -478,6 +572,77 @@
         
         function printChecklist() { window.print(); }
         
+        async function downloadAllMediaAsZip() {
+            const zipBtn = document.getElementById('zip-btn');
+            const zipStatus = document.getElementById('zip-status');
+
+            const allMedia = [];
+            for (const detailId in state) {
+                if (state[detailId].media && state[detailId].media.length > 0) {
+                    allMedia.push(...state[detailId].media);
+                }
+            }
+
+            if (allMedia.length === 0) {
+                alert('Không có hình ảnh/video nào để tải xuống.');
+                return;
+            }
+
+            zipBtn.disabled = true;
+            zipBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            zipStatus.textContent = 'Đang chuẩn bị file...';
+            zipStatus.classList.remove('hidden');
+
+            try {
+                const zip = new JSZip();
+                const promises = [];
+
+                allMedia.forEach((media) => {
+                    if (media.type === 'image') {
+                        const base64Data = media.dataUrl.split(',')[1];
+                        promises.push(Promise.resolve({ name: media.filename, data: base64Data, options: { base64: true } }));
+                    } else if (media.type === 'video') {
+                        const promise = fetch(media.dataUrl)
+                            .then(response => response.blob())
+                            .then(blob => ({ name: media.filename, data: blob, options: {} }));
+                        promises.push(promise);
+                    }
+                });
+
+                const files = await Promise.all(promises);
+                
+                files.forEach(file => {
+                    zip.file(file.name, file.data, file.options);
+                });
+
+                zipStatus.textContent = 'Đang nén file ZIP...';
+                const content = await zip.generateAsync({
+                    type: "blob",
+                    compression: "DEFLATE",
+                    compressionOptions: {
+                        level: 9
+                    }
+                }, (metadata) => {
+                    zipStatus.textContent = `Đang nén: ${Math.round(metadata.percent)}%`;
+                });
+
+                const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                saveAs(content, `GoldenCity_BangChung_${timestamp}.zip`);
+
+            } catch (error) {
+                console.error("Lỗi khi tạo file ZIP:", error);
+                alert("Đã xảy ra lỗi khi tạo file ZIP. Vui lòng thử lại.");
+                zipStatus.textContent = 'Đã xảy ra lỗi!';
+            } finally {
+                zipBtn.disabled = false;
+                zipBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                zipStatus.textContent = 'Hoàn tất!';
+                setTimeout(() => {
+                    zipStatus.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
             if (modalId === 'image-preview-modal') {
@@ -488,8 +653,17 @@
             }
         }
 
-        async function openCameraModal(itemId, itemText) {
-            photoForItem = { id: itemId, text: itemText };
+        async function openCameraModal(sectionId, itemId, detailId, detailText) {
+            const section = checklistData.find(s => s.id === sectionId);
+            const item = section.items.find(i => i.id === itemId);
+           
+            photoForItem = {
+                sectionId: section.id,
+                itemTitle: item.title,
+                detailText: detailText,
+                detailId: detailId
+            };
+            
             const cameraModal = document.getElementById('camera-modal');
             const video = document.getElementById('camera-stream');
             cameraModal.classList.remove('hidden');
@@ -536,10 +710,6 @@
             
             saveMedia({ type: 'image', filename, dataUrl, thumbnail: dataUrl });
             
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = filename;
-            link.click();
             closeCamera();
         }
 
@@ -591,10 +761,6 @@
                         const filename = generateFilename('webm');
                         saveMedia({ type: 'video', filename, dataUrl: videoUrl, thumbnail: thumbnailUrl });
                         
-                        const link = document.createElement('a');
-                        link.href = videoUrl;
-                        link.download = filename;
-                        link.click();
                         closeCamera();
                     };
                 };
@@ -617,22 +783,24 @@
         }
         
         function generateFilename(extension) {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const sanitizedText = photoForItem.text.replace(/[/\\?%*:|"<>\r\n]/g, '-').substring(0, 50);
-            return `GoldenCity - ${sanitizedText} - ${timestamp}.${extension}`;
+            const sectionName = sanitizeForFilename(photoForItem.sectionId);
+            const itemName = sanitizeForFilename(photoForItem.itemTitle);
+            const detailName = sanitizeForFilename(photoForItem.detailText);
+            return `${sectionName}_${itemName}_${detailName}.${extension}`;
         }
         
         function saveMedia(mediaObject) {
-             if (!state[photoForItem.id]) {
-                state[photoForItem.id] = { checked: false, media: [] };
+            const detailId = photoForItem.detailId;
+            if (!state[detailId]) {
+                state[detailId] = { checked: false, media: [] };
             }
-            state[photoForItem.id].media.push(mediaObject);
+            state[detailId].media.push(mediaObject);
             localStorage.setItem('checklistState', JSON.stringify(state));
             renderChecklist();
         }
 
-        function showMediaPreview(itemId, filename) {
-            const itemState = state[itemId];
+        function showMediaPreview(detailId, filename) {
+            const itemState = state[detailId];
             if (!itemState || !itemState.media || itemState.media.length === 0) return;
             currentGallery = itemState.media;
             currentImageIndex = currentGallery.findIndex(m => m.filename === filename);
@@ -720,12 +888,20 @@
             issuesListDiv.innerHTML = '';
             const detectedIssues = [];
 
-            const findIssues = (item) => {
-                if (state[item.id] && state[item.id].checked && item.isIssue) {
-                    detectedIssues.push({id: item.id, text: item.text});
+            const findIssues = (detail) => {
+                if (state[detail.id] && state[detail.id].checked) {
+                    // Prevent duplicates
+                    if (!detectedIssues.some(issue => issue.id === detail.id)) {
+                        detectedIssues.push({id: detail.id, text: detail.text});
+                    }
                 }
             };
-            checklistData.forEach(section => section.items.forEach(findIssues));
+            getCombinedData().forEach(section => {
+                section.items.forEach(item => {
+                    if(item.signs) item.signs.forEach(findIssues);
+                    if(item.symptoms) item.symptoms.forEach(findIssues);
+                });
+            });
             
             detectedIssues.forEach(issue => {
                 issuesListDiv.innerHTML += `<label class="flex items-center space-x-3"><input type="checkbox" name="issue" value="${issue.text}" class="form-checkbox h-5 w-5 text-blue-600" checked><span class="text-gray-700">${issue.text}</span></label>`;
@@ -787,8 +963,29 @@
             alert('Đã sao chép nội dung vào bộ nhớ tạm!');
         }
 
+        // Scroll-based collapse for progress bar
+        let lastScrollY = window.scrollY;
+        const stickyPanel = document.querySelector('.sticky-progress');
+
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+
+            // Add a small threshold to prevent flickering at the top
+            if (currentScrollY > lastScrollY && currentScrollY > 100) { 
+                stickyPanel.classList.add('collapsed');
+            } else if (currentScrollY < lastScrollY) {
+                stickyPanel.classList.remove('collapsed');
+            }
+
+            lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+        });
+
+        // Initial Load
         const savedState = localStorage.getItem('checklistState');
         if (savedState) { state = JSON.parse(savedState); }
+        const savedCustomItems = localStorage.getItem('customChecklistItems');
+        if(savedCustomItems) { customItems = JSON.parse(savedCustomItems); }
+        
         renderChecklist();
     </script>
 
