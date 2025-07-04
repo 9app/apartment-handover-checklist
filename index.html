@@ -69,11 +69,11 @@
             font-style: italic;
             color: #4b5563;
         }
-        /* Styles for collapsible progress panel - simplified */        
+        /* Styles for manual toggle progress panel */        
         #collapsible-content {
             transition: all 0.3s ease;
             opacity: 1;
-            max-height: 500px; /* Enough height for content */
+            max-height: 1000px; /* Large enough to accommodate content */
             overflow: hidden;
         }
         
@@ -82,7 +82,19 @@
             max-height: 0;
             padding-top: 0;
             margin-top: 0;
-            transform: translateY(-10px);
+        }
+        
+        #toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .sticky-progress.collapsed #toggle-icon {
+            transform: rotate(-90deg);
+        }
+        
+        /* Hover effect for toggle button */
+        .progress-header button:hover {
+            background-color: #f3f4f6;
         }
         
         /* Ensure proper text rendering */
@@ -91,11 +103,24 @@
             overflow-wrap: break-word;
         }
         
-        /* Responsive improvements */
+        /* Responsive improvements for manual toggle */
         @media (max-width: 768px) {
             .checklist-item {
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
+            }
+            
+            .progress-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .progress-header > div:last-child {
+                align-self: flex-end;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
             }
             
             .status-indicators {
@@ -212,11 +237,19 @@
             <!-- Header: always visible -->
             <div class="flex justify-between items-center progress-header">
                  <h2 class="text-lg font-semibold text-gray-700">Tiến độ kiểm tra</h2>
-                 <div class="text-right">
-                     <span id="progress-text" class="font-bold text-blue-600">0%</span>
-                     <div class="text-sm text-gray-500">
-                         <span id="report-count" class="text-red-600 font-medium">0 vấn đề</span> cần báo cáo
+                 <div class="flex items-center gap-3">
+                     <div class="text-right">
+                         <span id="progress-text" class="font-bold text-blue-600">0%</span>
+                         <div class="text-sm text-gray-500">
+                             <span id="report-count" class="text-red-600 font-medium">0 vấn đề</span> cần báo cáo
+                         </div>
                      </div>
+                     <!-- Toggle button -->
+                     <button onclick="toggleProgressPanel()" class="ml-2 p-1 rounded-lg hover:bg-gray-100 transition-colors" title="Thu gọn/Mở rộng">
+                         <svg id="toggle-icon" class="w-5 h-5 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                         </svg>
+                     </button>
                  </div>
             </div>
             
@@ -1475,26 +1508,28 @@
             alert('Đã sao chép nội dung vào bộ nhớ tạm!');
         }
 
-        // Simplified scroll-based collapse for progress bar
-        let lastScrollY = window.scrollY;
-        const stickyPanel = document.querySelector('.sticky-progress');
-        let scrollTimeout;
+        // Manual toggle function for progress panel
+        function toggleProgressPanel() {
+            const stickyPanel = document.querySelector('.sticky-progress');
+            const toggleIcon = document.getElementById('toggle-icon');
+            
+            if (stickyPanel.classList.contains('collapsed')) {
+                // Expand
+                stickyPanel.classList.remove('collapsed');
+                localStorage.setItem('progressPanelCollapsed', 'false');
+            } else {
+                // Collapse
+                stickyPanel.classList.add('collapsed');
+                localStorage.setItem('progressPanelCollapsed', 'true');
+            }
+        }
 
-        window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-            
-            // Clear previous timeout
-            clearTimeout(scrollTimeout);
-            
-            // Use timeout to debounce scroll events
-            scrollTimeout = setTimeout(() => {
-                if (currentScrollY > 150) { 
-                    stickyPanel.classList.add('collapsed');
-                } else {
-                    stickyPanel.classList.remove('collapsed');
-                }
-                lastScrollY = currentScrollY;
-            }, 100);
+        // Restore panel state from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCollapsed = localStorage.getItem('progressPanelCollapsed') === 'true';
+            if (isCollapsed) {
+                document.querySelector('.sticky-progress').classList.add('collapsed');
+            }
         });
 
         // Apartment Code Editing Functions
