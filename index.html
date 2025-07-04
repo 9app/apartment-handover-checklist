@@ -26,10 +26,6 @@
         .checklist-item {
             transition: all 0.2s ease-in-out;
         }
-        .checklist-item.checked {
-            text-decoration: line-through;
-            color: #6b7280;
-        }
         .checklist-item.checked .note, .checklist-item.checked .media-list-title {
             text-decoration: none;
             color: #6b7280;
@@ -39,7 +35,11 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            transition: padding 0.4s ease-in-out;
+            transition: all 0.3s ease;
+        }
+        .sticky-progress.collapsed {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
         .action-button {
             transition: all 0.2s ease-in-out;
@@ -69,52 +69,180 @@
             font-style: italic;
             color: #4b5563;
         }
-        /* Styles for collapsible progress panel */
+        /* Styles for collapsible progress panel - simplified */        
         #collapsible-content {
-            max-height: 200px; /* A large enough value to show content */
-            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out;
+            transition: all 0.3s ease;
             opacity: 1;
+            max-height: 500px; /* Enough height for content */
             overflow: hidden;
         }
+        
         .sticky-progress.collapsed #collapsible-content {
-            max-height: 0;
-            margin-top: 0;
             opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            margin-top: 0;
+            transform: translateY(-10px);
+        }
+        
+        /* Ensure proper text rendering */
+        .checklist-item label {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .checklist-item {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            
+            .status-indicators {
+                font-size: 0.75rem;
+            }
+            
+            .camera-button {
+                padding: 0.5rem;
+            }
+            
+            .media-thumbnail {
+                height: 3rem;
+                width: 3rem;
+            }
+            
+            .note-textarea {
+                font-size: 0.875rem;
+            }
+            
+            .checklist-item .note {
+                margin-left: 0;
+                padding-left: 1rem;
+            }
+            
+            .thumbnail-container {
+                padding-left: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            
+            .action-buttons button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            .media-thumbnail {
+                height: 2.5rem;
+                width: 2.5rem;
+            }
+            
+            .checklist-item {
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Custom styles */
+        .checklist-item.checked label {
+            text-decoration: line-through;
+            color: #6b7280; /* gray-500 */
+        }
+        .checklist-item.checked .status-indicators span {
+            text-decoration: none !important;
+        }
+        .arrow {
+            transition: transform 0.2s ease-in-out;
+        }
+        details[open] .arrow {
+            transform: rotate(90deg);
+        }
+        .delete-btn {
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .thumbnail-container:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none;
+            }
+            /* Hide empty add forms when printing */
+            .add-sign-form, .add-symptom-form {
+                display: none !important;
+            }
+            /* Hide note buttons when printing */
+            .note-add-button {
+                display: none !important;
+            }
+            /* Hide action buttons when printing */
+            .action-buttons {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+    <div class="container mx-auto max-w-4xl p-3 sm:p-4 md:p-6 lg:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">CHECKLIST HOÀN CHỈNH BÀN GIAO CĂN HỘ T3.0206A</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
+                CHECKLIST<br/>BÀN GIAO CĂN HỘ<br/>
+                <span id="apartment-code-display" onclick="editApartmentCode()" class="cursor-pointer hover:bg-yellow-100 rounded px-2 py-1 transition-colors inline-block" title="Nhấp để chỉnh sửa mã căn hộ">T3.0206A</span>
+                <input type="text" id="apartment-code-input" class="hidden text-center bg-yellow-50 border-2 border-blue-400 rounded px-2 py-1 text-2xl sm:text-3xl font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" onblur="saveApartmentCode()" onkeydown="handleApartmentCodeKeydown(event)" maxlength="20" placeholder="Nhập mã căn hộ">
+            </h1>
             <p class="text-lg text-gray-600 mt-2">Dự án Nhà ở xã hội Golden City An Giang</p>
         </header>
 
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6 sticky-progress">
-            <div class="flex justify-between items-center">
-                 <h2 class="text-lg font-semibold text-gray-700">Tiến độ hoàn thành</h2>
-                 <span id="progress-text" class="font-bold text-blue-600">0%</span>
+            <!-- Header: always visible -->
+            <div class="flex justify-between items-center progress-header">
+                 <h2 class="text-lg font-semibold text-gray-700">Tiến độ kiểm tra</h2>
+                 <div class="text-right">
+                     <span id="progress-text" class="font-bold text-blue-600">0%</span>
+                     <div class="text-sm text-gray-500">
+                         <span id="report-count" class="text-red-600 font-medium">0 vấn đề</span> cần báo cáo
+                     </div>
+                 </div>
             </div>
+            
+            <!-- Collapsible content: hidden when collapsed -->
             <div id="collapsible-content">
                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
                     <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
-                <div class="flex justify-end items-center mt-4 space-x-2">
+                <div class="mt-2 text-sm text-gray-600">
+                    <span id="checked-count">0</span> / <span id="total-count">0</span> mục đã kiểm tra
+                </div>
+                <div class="flex flex-col sm:flex-row sm:flex-wrap justify-end items-stretch sm:items-center mt-4 gap-2 action-buttons">
                      <span id="zip-status" class="text-sm text-gray-600 mr-2 hidden"></span>
-                     <button onclick="printChecklist()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        <span>In Checklist</span>
+                     <button onclick="printChecklist()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-lg inline-flex items-center justify-center text-sm transition-all duration-200 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <span class="whitespace-nowrap">In</span>
                     </button>
-                    <button id="zip-btn" onclick="downloadAllMediaAsZip()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
-                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <button id="zip-btn" onclick="confirmDownloadZip()" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-4 rounded-lg inline-flex items-center justify-center text-sm transition-all duration-200 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
                         </svg>
-                        <span>Tải ZIP Bằng Chứng</span>
+                        <span class="whitespace-nowrap">Tải hình ảnh</span>
                     </button>
-                     <button onclick="openDraftEmailModal()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center text-sm">
-                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 2l7.997 3.884A2 2 0 0019 7.616V16a2 2 0 01-2 2H3a2 2 0 01-2-2V7.616a2 2 0 001.003-1.732zM10 4.268L3.003 7.616l6.997 3.498 6.997-3.498L10 4.268zM3 9.416l6.997 3.498V16H3V9.416zm13.003 0L10 12.914V16h6.997V9.416z"></path></svg>
-                        <span>Soạn Thảo Email</span>
+                     <button onclick="openDraftEmailModal()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg inline-flex items-center justify-center text-sm transition-all duration-200 hover:shadow-lg">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 2l7.997 3.884A2 2 0 0019 7.616V16a2 2 0 01-2 2H3a2 2 0 01-2-2V7.616a2 2 0 001.003-1.732zM10 4.268L3.003 7.616l6.997 3.498 6.997-3.498L10 4.268zM3 9.416l6.997 3.498V16H3V9.416zm13.003 0L10 12.914V16h6.997V9.416z"></path></svg>
+                        <span class="whitespace-nowrap">Email</span>
                     </button>
                 </div>
             </div>
@@ -163,10 +291,31 @@
             <video id="camera-stream" class="w-full h-auto bg-black rounded-md" autoplay playsinline></video>
             <canvas id="camera-canvas" class="hidden"></canvas>
             <div id="timer" class="absolute top-2 right-2 bg-red-600 text-white text-xs font-mono px-2 py-1 rounded-full hidden">00:00</div>
+            <div id="camera-loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
+              <div class="text-white text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                <p class="text-sm">Đang khởi động camera...</p>
+              </div>
+            </div>
           </div>
           <div class="flex items-center justify-center space-x-4 px-4 py-3">
-            <button id="capture-btn" onclick="capturePhoto()" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600">Chụp ảnh</button>
-            <button id="record-btn" onclick="toggleRecording()" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-600">Bắt đầu Quay</button>
+            <button id="capture-btn" onclick="capturePhoto()" disabled class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              <span class="flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Chụp ảnh
+              </span>
+            </button>
+            <button id="record-btn" onclick="toggleRecording()" disabled class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              <span class="flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                </svg>
+                <span id="record-btn-text">Bắt đầu Quay</span>
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -354,13 +503,26 @@
 
         function sanitizeForFilename(str) {
             if (!str) return '';
-            const a = 'àáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỵỷỹ';
+            const a = 'àáâãèéêìíòóôõùúăđĩũơưăạảấầ̉ẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳýỵỷỹ';
             const b = 'aaaaaeeeiioooouuadiuouaaaaaaaaaaaaaaaeeeeeeeeeeiiooooooooooooooooouuuuuuuuuuyyyyy';
             let result = str.toLowerCase();
             for (let i = 0; i < a.length; i++) {
                 result = result.replace(new RegExp(a[i], 'g'), b[i]);
             }
             return result.replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function safeText(text) {
+            if (!text) return '';
+            // Remove any potentially problematic characters
+            return text.replace(/[<>]/g, '').trim();
         }
 
         function renderChecklist() {
@@ -381,8 +543,10 @@
             
             combinedData.forEach(section => {
                 section.items.forEach(item => {
-                    if (item.signs) item.signs.forEach(countItems);
-                    if (item.symptoms) item.symptoms.forEach(countItems);
+                    const allCheckItems = [];
+                    if (item.signs) allCheckItems.push(...item.signs);
+                    if (item.symptoms) allCheckItems.push(...item.symptoms);
+                    allCheckItems.forEach(countItems);
                 });
             });
 
@@ -392,12 +556,12 @@
                 sectionDiv.open = true;
 
                 const summary = document.createElement('summary');
-                summary.className = 'p-4 sm:p-5 cursor-pointer flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors';
-                summary.innerHTML = `<h2 class="text-lg sm:text-xl font-bold text-gray-800">${section.title}</h2><svg class="w-6 h-6 text-gray-500 arrow transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+                summary.className = 'p-3 sm:p-4 md:p-5 cursor-pointer flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors';
+                summary.innerHTML = `<h2 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 pr-2">${section.title}</h2><svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-500 arrow transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
                 sectionDiv.appendChild(summary);
 
                 const contentDiv = document.createElement('div');
-                contentDiv.className = 'p-4 sm:p-5 border-t border-gray-200 divide-y divide-gray-200';
+                contentDiv.className = 'p-3 sm:p-4 md:p-5 border-t border-gray-200 divide-y divide-gray-200';
                 
                 section.items.forEach(item => {
                     contentDiv.appendChild(createChecklistGroup(section, item));
@@ -414,13 +578,19 @@
             for (const itemId in customItems) {
                 const itemRef = combined.flatMap(s => s.items).find(i => i.id === itemId);
                 if (itemRef) {
+                    // Gộp tất cả custom items vào signs để tương thích với cấu trúc hiện tại
+                    if (customItems[itemId].checkitems) {
+                        if (!itemRef.signs) itemRef.signs = [];
+                        itemRef.signs.push(...customItems[itemId].checkitems);
+                    }
+                    // Giữ lại xử lý cho signs và symptoms cũ để tương thích ngược
                     if (customItems[itemId].signs) {
                         if (!itemRef.signs) itemRef.signs = [];
                         itemRef.signs.push(...customItems[itemId].signs);
                     }
                     if (customItems[itemId].symptoms) {
-                         if (!itemRef.symptoms) itemRef.symptoms = [];
-                        itemRef.symptoms.push(...customItems[itemId].symptoms);
+                        if (!itemRef.signs) itemRef.signs = [];
+                        itemRef.signs.push(...customItems[itemId].symptoms);
                     }
                 }
             }
@@ -429,67 +599,72 @@
 
         function createChecklistGroup(section, item) {
             const groupDiv = document.createElement('div');
-            groupDiv.className = 'py-4';
+            groupDiv.className = 'py-3 sm:py-4';
             
-            let signsHtml = '';
+            let checkItemsHtml = '';
+            const allCheckItems = [];
+            
+            // Gộp tất cả signs và symptoms thành một danh sách "Cần kiểm tra"
             if (item.signs && item.signs.length > 0) {
-                signsHtml += '<h4 class="font-semibold text-gray-800 mt-3 mb-2">Dấu hiệu:</h4>';
-                item.signs.forEach(sign => {
-                    signsHtml += createDetailItem(section, item, sign);
-                });
+                allCheckItems.push(...item.signs);
             }
-
-            let symptomsHtml = '';
             if (item.symptoms && item.symptoms.length > 0) {
-                symptomsHtml += '<h4 class="font-semibold text-gray-800 mt-3 mb-2">Triệu chứng:</h4>';
-                item.symptoms.forEach(symptom => {
-                    symptomsHtml += createDetailItem(section, item, symptom);
+                allCheckItems.push(...item.symptoms);
+            }
+            
+            if (allCheckItems.length > 0) {
+                checkItemsHtml += '<h4 class="font-semibold text-gray-800 mt-3 mb-2">Cần kiểm tra:</h4>';
+                allCheckItems.forEach(checkItem => {
+                    checkItemsHtml += createDetailItem(section, item, checkItem);
                 });
             }
             
-            const addSignHtml = `
-                <div class="mt-2">
+            const addCheckItemHtml = `
+                <div class="mt-2 add-check-item-form">
                     <div class="flex items-center space-x-2">
-                        <input type="text" id="input-signs-${item.id}" class="w-full p-1.5 border rounded-md text-sm" placeholder="Thêm dấu hiệu khác...">
-                        <button onclick="addCustomDetail('${item.id}', 'signs')" class="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-600">Thêm</button>
-                    </div>
-                </div>`;
-                
-            const addSymptomHtml = `
-                 <div class="mt-2">
-                    <div class="flex items-center space-x-2">
-                        <input type="text" id="input-symptoms-${item.id}" class="w-full p-1.5 border rounded-md text-sm" placeholder="Thêm triệu chứng khác...">
-                        <button onclick="addCustomDetail('${item.id}', 'symptoms')" class="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-600">Thêm</button>
+                        <input type="text" id="input-checkitems-${item.id}" class="w-full p-1.5 border rounded-md text-sm" placeholder="Thêm mục kiểm tra khác...">
+                        <button onclick="addCustomDetail('${item.id}', 'checkitems')" class="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-600">Thêm</button>
                     </div>
                 </div>`;
 
             groupDiv.innerHTML = `
-                <h3 class="text-lg font-bold text-gray-900">${item.title}</h3>
+                <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2">${item.title}</h3>
                 ${item.note ? `<div class="note text-sm mt-2 p-3 rounded-md bg-gray-50 border-l-4 border-gray-300 text-gray-700">${item.note}</div>` : ''}
-                <div class="pl-4 mt-2">
-                    ${signsHtml}
-                    ${addSignHtml}
-                    ${symptomsHtml}
-                    ${addSymptomHtml}
+                <div class="pl-2 sm:pl-4 mt-3">
+                    ${checkItemsHtml}
+                    ${addCheckItemHtml}
                 </div>
             `;
             return groupDiv;
         }
 
         function createDetailItem(section, item, detail) {
-            const itemState = state[detail.id] || { checked: false, media: [] };
+            const itemState = state[detail.id] || { checked: false, media: [], note: '' };
             const isChecked = itemState.checked;
+            const hasNote = itemState.note && itemState.note.trim() !== '';
+            const hasMedia = itemState.media && itemState.media.length > 0;
 
-            let mediaSectionHtml = '<div class="mt-2 pl-8 thumbnail-container">';
-            if (itemState.media && itemState.media.length > 0) {
-                mediaSectionHtml += '<div class="flex flex-wrap gap-2 items-center">';
-                itemState.media.forEach(mediaFile => {
-                    const playIcon = mediaFile.type === 'video' ? `<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-md"><svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg></div>` : '';
+            let mediaSectionHtml = '<div class="mt-3 pl-4 sm:pl-8 thumbnail-container">';
+            if (hasMedia) {
+                mediaSectionHtml += '<div class="flex flex-wrap gap-2 sm:gap-3 items-center">';
+                itemState.media.forEach((mediaFile, index) => {
+                    const playIcon = mediaFile.type === 'video' ? `<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-md"><svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg></div>` : '';
+                    
+                    // Escape quotes trong filename để tránh lỗi JavaScript
+                    const safeFilename = mediaFile.filename.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    
                     mediaSectionHtml += `
                         <div class="relative group">
-                            <img src="${mediaFile.thumbnail}" onclick="showMediaPreview('${detail.id}', '${mediaFile.filename}')" class="h-16 w-16 rounded-lg object-cover cursor-pointer shadow-md hover:shadow-xl transition-shadow" alt="${mediaFile.filename}">
+                            <img src="${mediaFile.thumbnail}" 
+                                 onclick="showMediaPreview('${detail.id}', '${safeFilename}')" 
+                                 class="h-12 w-12 sm:h-16 sm:w-16 rounded-lg object-cover cursor-pointer shadow-md hover:shadow-xl transition-shadow" 
+                                 alt="${mediaFile.filename}">
                             ${playIcon}
-                            <button onclick="deleteMedia('${detail.id}', '${mediaFile.filename}')" class="delete-btn absolute -top-1 -right-1 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                            <button onclick="deleteMedia('${detail.id}', '${safeFilename}'); event.stopPropagation();" 
+                                    class="delete-btn absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-md" 
+                                    title="Xóa ${mediaFile.type === 'video' ? 'video' : 'hình ảnh'} này">
+                                ×
+                            </button>
                         </div>
                     `;
                 });
@@ -497,18 +672,57 @@
             }
             mediaSectionHtml += '</div>';
 
+            // Ghi chú section - chia thành hai phần
+            const noteButtonHtml = !hasNote ? `<button id="note-btn-${detail.id}" onclick="showNoteTextarea('${detail.id}')" class="text-sm text-green-600 hover:text-green-800 font-medium bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition-colors note-add-button">+ Thêm ghi chú</button>` : '';
+            const noteTextareaHtml = `
+                <div class="mt-3 pl-4 sm:pl-8 ${hasNote ? 'bg-yellow-50 border-l-2 border-yellow-400 pl-2 py-2 rounded-md' : ''}">
+                    <textarea id="note-${detail.id}" placeholder="Thêm ghi chú..." 
+                              class="w-full p-2 text-sm border rounded-md resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${!hasNote ? 'hidden' : ''}" 
+                              rows="2" 
+                              oninput="updateNote('${detail.id}', this.value)">${itemState.note || ''}</textarea>
+                    <div id="note-status-${detail.id}">${hasNote ? '<div class="text-xs text-green-600 mt-2 font-medium">✓ Có ghi chú</div>' : ''}</div>
+                </div>
+            `;
+
+            // Tạo indicators cho trạng thái
+            const statusIndicators = [];
+            if (isChecked) statusIndicators.push('<span class="text-green-600 text-sm font-semibold" title="Đã kiểm tra">✓ Đã kiểm tra</span>');
+            if (hasNote) statusIndicators.push('<span class="text-orange-600 text-sm font-medium" title="Có ghi chú">📝 Ghi chú</span>');
+            if (hasMedia) statusIndicators.push('<span class="text-purple-600 text-sm font-medium" title="Có hình ảnh/video">📷 Hình ảnh</span>');
+
             return `
-                <div class="checklist-item py-2 ${isChecked ? 'checked' : ''}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <input type="checkbox" id="${detail.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0" onchange="handleCheck('${detail.id}', this.checked)" ${isChecked ? 'checked' : ''}>
-                            <label for="${detail.id}" class="text-gray-800 cursor-pointer">${detail.text}</label>
+                <div class="checklist-item py-3 ${isChecked ? 'checked' : ''}" data-detail-id="${detail.id}">
+                    <!-- Mobile Layout (< md screens) -->
+                    <div class="md:hidden">
+                        <div class="flex items-start space-x-3 mb-2">
+                            <input type="checkbox" id="${detail.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0 mt-0.5" onchange="handleCheck('${detail.id}', this.checked)" ${isChecked ? 'checked' : ''}>
+                            <label for="${detail.id}" class="text-gray-800 cursor-pointer flex-1 text-sm leading-5">${safeText(detail.text)}</label>
                         </div>
-                        <button onclick="openCameraModal('${section.id}', '${item.id}', '${detail.id}', '${detail.text}')" title="Thêm ghi nhận" class="p-1.5 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        </button>
+                        <div class="flex items-center justify-between pl-7">
+                            ${statusIndicators.length > 0 ? `<div class="flex flex-wrap items-center gap-1 status-indicators">${statusIndicators.map(indicator => `<span class="text-xs">${indicator}</span>`).join('')}</div>` : '<div class="status-indicators"></div>'}
+                            <button onclick="openCameraModal('${section.id}', '${item.id}', '${detail.id}', '${detail.text}')" title="Thêm hình ảnh/video" class="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 flex-shrink-0 action-buttons transition-all duration-200 hover:shadow-md">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </button>
+                        </div>
                     </div>
+                    
+                    <!-- Desktop Layout (>= md screens) -->
+                    <div class="hidden md:flex items-center justify-between">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <input type="checkbox" id="${detail.id}-desktop" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0" onchange="handleCheck('${detail.id}', this.checked)" ${isChecked ? 'checked' : ''}>
+                            <label for="${detail.id}-desktop" class="text-gray-800 cursor-pointer flex-1 truncate">${safeText(detail.text)}</label>
+                        </div>
+                        <div class="flex items-center space-x-3 flex-shrink-0 ml-4">
+                            ${statusIndicators.length > 0 ? `<div class="flex items-center space-x-2 status-indicators">${statusIndicators.join(' ')}</div>` : '<div class="status-indicators"></div>'}
+                            <button onclick="openCameraModal('${section.id}', '${item.id}', '${detail.text}')" title="Thêm hình ảnh/video" class="p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-all duration-200 hover:shadow-md action-buttons">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    ${!hasMedia && noteButtonHtml ? `<div class="mt-3 pl-4 sm:pl-8">${noteButtonHtml}</div>` : ''}
                     ${mediaSectionHtml}
+                    ${hasMedia && noteButtonHtml ? `<div class="mt-3 pl-4 sm:pl-8">${noteButtonHtml}</div>` : ''}
+                    ${noteTextareaHtml}
                 </div>
             `;
         }
@@ -524,19 +738,19 @@
             }
             
             if (!customItems[itemId]) {
-                customItems[itemId] = { signs: [], symptoms: [] };
+                customItems[itemId] = { checkitems: [] };
             }
-            if (!customItems[itemId][type]) {
-                 customItems[itemId][type] = [];
+            if (!customItems[itemId].checkitems) {
+                 customItems[itemId].checkitems = [];
             }
             
             const newDetail = {
-                id: `${itemId}-custom-${type}-${Date.now()}`,
+                id: `${itemId}-custom-checkitems-${Date.now()}`,
                 text: text,
                 isIssue: true
             };
             
-            customItems[itemId][type].push(newDetail);
+            customItems[itemId].checkitems.push(newDetail);
             localStorage.setItem('customChecklistItems', JSON.stringify(customItems));
             
             input.value = '';
@@ -545,32 +759,201 @@
 
         function handleCheck(id, isChecked) {
             if (!state[id]) {
-                state[id] = { checked: false, media: [] };
+                state[id] = { checked: false, media: [], note: '' };
             }
             state[id].checked = isChecked;
             localStorage.setItem('checklistState', JSON.stringify(state));
+            
+            // Sync both mobile and desktop checkboxes
+            const mobileCheckbox = document.getElementById(id);
+            const desktopCheckbox = document.getElementById(id + '-desktop');
+            if (mobileCheckbox && mobileCheckbox.checked !== isChecked) {
+                mobileCheckbox.checked = isChecked;
+            }
+            if (desktopCheckbox && desktopCheckbox.checked !== isChecked) {
+                desktopCheckbox.checked = isChecked;
+            }
+            
             renderChecklist();
+        }
+
+        function updateNote(id, noteText) {
+            if (!state[id]) {
+                state[id] = { checked: false, media: [], note: '' };
+            }
+            const oldNote = state[id].note;
+            state[id].note = noteText.trim();
+            localStorage.setItem('checklistState', JSON.stringify(state));
+            
+            // Chỉ cập nhật status indicators và progress nếu có thay đổi
+            if (oldNote !== noteText.trim()) {
+                updateStatusIndicators(id);
+                updateProgressOnly();
+            }
+        }
+        
+        function updateStatusIndicators(detailId) {
+            const itemState = state[detailId];
+            if (!itemState) return;
+            
+            const hasNote = itemState.note && itemState.note.trim() !== '';
+            const hasMedia = itemState.media && itemState.media.length > 0;
+            const isChecked = itemState.checked;
+            
+            // Tìm tất cả status indicators cho item này
+            const statusContainers = document.querySelectorAll(`[data-detail-id="${detailId}"] .status-indicators`);
+            
+            statusContainers.forEach(container => {
+                const statusIndicators = [];
+                if (isChecked) statusIndicators.push('<span class="text-green-600 text-sm font-semibold" title="Đã kiểm tra">✓ Đã kiểm tra</span>');
+                if (hasNote) statusIndicators.push('<span class="text-orange-600 text-sm font-medium" title="Có ghi chú">📝 Ghi chú</span>');
+                if (hasMedia) statusIndicators.push('<span class="text-purple-600 text-sm font-medium" title="Có hình ảnh/video">📷 Hình ảnh</span>');
+                
+                container.innerHTML = statusIndicators.length > 0 ? statusIndicators.join(' ') : '';
+            });
+            
+            // Cập nhật background highlight cho phần ghi chú thay vì toàn bộ item
+            // Tìm đúng div chứa textarea ghi chú
+            const noteTextarea = document.getElementById(`note-${detailId}`);
+            if (noteTextarea) {
+                const noteDiv = noteTextarea.closest('.mt-3');
+                if (noteDiv) {
+                    if (hasNote) {
+                        noteDiv.classList.add('bg-yellow-50', 'border-l-2', 'border-yellow-400', 'pl-2', 'py-2', 'rounded-md');
+                    } else {
+                        noteDiv.classList.remove('bg-yellow-50', 'border-l-2', 'border-yellow-400', 'pl-2', 'py-2', 'rounded-md');
+                    }
+                }
+            }
+            
+            // Cập nhật hiển thị note status
+            const noteStatusDiv = document.getElementById(`note-status-${detailId}`);
+            if (noteStatusDiv) {
+                if (hasNote) {
+                    noteStatusDiv.innerHTML = '<div class="text-xs text-green-600 mt-2 font-medium">✓ Có ghi chú</div>';
+                } else {
+                    noteStatusDiv.innerHTML = '';
+                }
+            }
+        }
+        
+        function updateProgressOnly() {
+            let totalItems = 0;
+            let checkedItems = 0;
+            
+            const combinedData = getCombinedData();
+            const countItems = (item) => {
+                if (item.isIssue) {
+                    totalItems++;
+                    if (state[item.id] && state[item.id].checked) {
+                        checkedItems++;
+                    }
+                }
+            };
+            
+            combinedData.forEach(section => {
+                section.items.forEach(item => {
+                    const allCheckItems = [];
+                    if (item.signs) allCheckItems.push(...item.signs);
+                    if (item.symptoms) allCheckItems.push(...item.symptoms);
+                    allCheckItems.forEach(countItems);
+                });
+            });
+            
+            updateProgress(checkedItems, totalItems);
+        }
+
+        function showNoteTextarea(id) {
+            const textarea = document.getElementById(`note-${id}`);
+            const button = document.getElementById(`note-btn-${id}`);
+            
+            if (textarea && button) {
+                button.style.display = 'none';
+                textarea.classList.remove('hidden');
+                textarea.focus();
+            }
         }
         
         function deleteMedia(detailId, filename) {
-            if (state[detailId] && state[detailId].media) {
-                const mediaFile = state[detailId].media.find(m => m.filename === filename);
-                if (mediaFile && mediaFile.type === 'video') {
-                    URL.revokeObjectURL(mediaFile.dataUrl);
-                }
-                state[detailId].media = state[detailId].media.filter(m => m.filename !== filename);
-                localStorage.setItem('checklistState', JSON.stringify(state));
-                renderChecklist();
+            if (!state[detailId] || !state[detailId].media) {
+                console.warn('Không tìm thấy media để xóa');
+                return;
             }
+
+            // Tìm file cần xóa
+            const mediaIndex = state[detailId].media.findIndex(m => m.filename === filename);
+            if (mediaIndex === -1) {
+                console.warn('Không tìm thấy file:', filename);
+                return;
+            }
+
+            // Xác nhận trước khi xóa
+            if (!confirm(`Bạn có chắc muốn xóa file "${filename}"?`)) {
+                return;
+            }
+
+            const mediaFile = state[detailId].media[mediaIndex];
+            
+            // Giải phóng URL nếu là video
+            if (mediaFile.type === 'video' && mediaFile.dataUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(mediaFile.dataUrl);
+            }
+            
+            // Xóa chỉ file được chọn
+            state[detailId].media.splice(mediaIndex, 1);
+            
+            // Lưu state và render lại
+            localStorage.setItem('checklistState', JSON.stringify(state));
+            renderChecklist();
+            
+            console.log(`Đã xóa file: ${filename}`);
         }
 
         function updateProgress(checked, total) {
             const percentage = total > 0 ? Math.round((checked / total) * 100) : 0;
             document.getElementById('progress-bar').style.width = `${percentage}%`;
             document.getElementById('progress-text').textContent = `${percentage}%`;
+            document.getElementById('checked-count').textContent = checked;
+            document.getElementById('total-count').textContent = total;
+            
+            // Tính số vấn đề cần báo cáo (có ghi chú hoặc hình ảnh)
+            let reportCount = 0;
+            Object.values(state).forEach(itemState => {
+                const hasMedia = itemState.media && itemState.media.length > 0;
+                const hasNote = itemState.note && itemState.note.trim() !== '';
+                // Một mục được tính là vấn đề nếu có ghi chú HOẶC có hình ảnh
+                if (hasMedia || hasNote) {
+                    reportCount++;
+                }
+            });
+            
+            document.getElementById('report-count').textContent = `${reportCount} vấn đề`;
         }
         
-        function printChecklist() { window.print(); }
+        function confirmDownloadZip() {
+            const allMedia = [];
+            for (const detailId in state) {
+                if (state[detailId].media && state[detailId].media.length > 0) {
+                    allMedia.push(...state[detailId].media);
+                }
+            }
+
+            if (allMedia.length === 0) {
+                alert('Không có hình ảnh/video nào để tải xuống.');
+                return;
+            }
+
+            const message = `Bạn có muốn tải xuống ${allMedia.length} file hình ảnh/video thành file ZIP không?`;
+            if (confirm(message)) {
+                downloadAllMediaAsZip();
+            }
+        }
+        
+        function printChecklist() { 
+            if (confirm('Bạn có muốn in checklist không? Các form nhập liệu sẽ được ẩn khi in.')) {
+                window.print(); 
+            }
+        }
         
         async function downloadAllMediaAsZip() {
             const zipBtn = document.getElementById('zip-btn');
@@ -666,34 +1049,96 @@
             
             const cameraModal = document.getElementById('camera-modal');
             const video = document.getElementById('camera-stream');
+            const captureBtn = document.getElementById('capture-btn');
+            const recordBtn = document.getElementById('record-btn');
+            const loadingDiv = document.getElementById('camera-loading');
+            
+            // Show modal and reset button states
             cameraModal.classList.remove('hidden');
-
+            captureBtn.disabled = true;
+            recordBtn.disabled = true;
+            loadingDiv.classList.remove('hidden');
+            
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true });
+                    currentStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }, 
+                        audio: true 
+                    });
+                    
                     video.srcObject = currentStream;
-                    document.getElementById('record-btn').textContent = 'Bắt đầu Quay';
+                    
+                    // Wait for video to be ready
+                    await new Promise((resolve, reject) => {
+                        video.onloadedmetadata = () => {
+                            video.play().then(resolve).catch(reject);
+                        };
+                        video.onerror = reject;
+                        
+                        // Timeout after 10 seconds
+                        setTimeout(() => reject(new Error('Camera timeout')), 10000);
+                    });
+                    
+                    // Camera is ready, enable buttons and hide loading
+                    loadingDiv.classList.add('hidden');
+                    captureBtn.disabled = false;
+                    recordBtn.disabled = false;
+                    document.getElementById('record-btn-text').textContent = 'Bắt đầu Quay';
                     isRecording = false;
+                    
                 } else {
-                    alert('Trình duyệt của bạn không hỗ trợ truy cập camera.');
-                    closeCamera();
+                    throw new Error('Trình duyệt không hỗ trợ truy cập camera');
                 }
             } catch (err) {
                 console.error("Error accessing camera: ", err);
-                alert('Không thể truy cập camera. Vui lòng cấp quyền và thử lại.');
-                closeCamera();
+                loadingDiv.innerHTML = `
+                    <div class="text-white text-center">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <p class="text-sm">Không thể truy cập camera</p>
+                        <p class="text-xs mt-1">Vui lòng cấp quyền và thử lại</p>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    closeCamera();
+                }, 3000);
             }
         }
         
         function closeCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
             }
-            if (isRecording) {
+            if (isRecording && mediaRecorder) {
                 mediaRecorder.stop();
             }
             clearInterval(timerInterval);
-            document.getElementById('timer').classList.add('hidden');
+            
+            // Reset UI elements
+            const timerDiv = document.getElementById('timer');
+            const loadingDiv = document.getElementById('camera-loading');
+            const captureBtn = document.getElementById('capture-btn');
+            const recordBtn = document.getElementById('record-btn');
+            const recordBtnText = document.getElementById('record-btn-text');
+            const video = document.getElementById('camera-stream');
+            
+            timerDiv.classList.add('hidden');
+            loadingDiv.classList.add('hidden');
+            captureBtn.disabled = true;
+            recordBtn.disabled = true;
+            recordBtnText.textContent = 'Bắt đầu Quay';
+            recordBtn.classList.remove('bg-red-600');
+            recordBtn.classList.add('bg-red-500');
+            video.srcObject = null;
+            
+            isRecording = false;
             document.getElementById('camera-modal').classList.add('hidden');
         }
 
@@ -701,6 +1146,13 @@
             const canvas = document.getElementById('camera-canvas');
             const video = document.getElementById('camera-stream');
             const context = canvas.getContext('2d');
+            
+            // Ensure video is ready
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                alert('Camera chưa sẵn sàng. Vui lòng thử lại sau vài giây.');
+                return;
+            }
+            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
@@ -710,11 +1162,20 @@
             
             saveMedia({ type: 'image', filename, dataUrl, thumbnail: dataUrl });
             
-            closeCamera();
+            // Show success feedback
+            const captureBtn = document.getElementById('capture-btn');
+            const originalText = captureBtn.innerHTML;
+            captureBtn.innerHTML = '<span class="flex items-center"><svg class="w-4 h-4 mr-2 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Đã chụp!</span>';
+            
+            setTimeout(() => {
+                captureBtn.innerHTML = originalText;
+                closeCamera();
+            }, 1000);
         }
 
         function toggleRecording() {
             const recordBtn = document.getElementById('record-btn');
+            const recordBtnText = document.getElementById('record-btn-text');
             const captureBtn = document.getElementById('capture-btn');
             const timerDiv = document.getElementById('timer');
 
@@ -724,16 +1185,27 @@
             }
 
             if (isRecording) {
+                // Stop recording
                 mediaRecorder.stop();
-                recordBtn.textContent = 'Bắt đầu Quay';
+                recordBtnText.textContent = 'Bắt đầu Quay';
+                recordBtn.classList.remove('bg-red-600');
+                recordBtn.classList.add('bg-red-500');
                 captureBtn.disabled = false;
                 isRecording = false;
                 clearInterval(timerInterval);
                 timerDiv.classList.add('hidden');
             } else {
+                // Start recording
                 recordedChunks = [];
                 try {
-                    mediaRecorder = new MediaRecorder(currentStream, { mimeType: 'video/webm' });
+                    const options = { mimeType: 'video/webm;codecs=vp9' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options.mimeType = 'video/webm;codecs=vp8';
+                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                            options.mimeType = 'video/webm';
+                        }
+                    }
+                    mediaRecorder = new MediaRecorder(currentStream, options);
                 } catch (e) {
                     console.error("Error creating MediaRecorder:", e);
                     alert("Không thể tạo trình ghi video. Trình duyệt của bạn có thể không hỗ trợ định dạng này.");
@@ -745,6 +1217,7 @@
                         recordedChunks.push(event.data);
                     }
                 };
+                
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
                     const videoUrl = URL.createObjectURL(blob);
@@ -761,12 +1234,18 @@
                         const filename = generateFilename('webm');
                         saveMedia({ type: 'video', filename, dataUrl: videoUrl, thumbnail: thumbnailUrl });
                         
-                        closeCamera();
+                        // Show success feedback
+                        recordBtnText.textContent = 'Đã lưu video!';
+                        setTimeout(() => {
+                            closeCamera();
+                        }, 1000);
                     };
                 };
 
                 mediaRecorder.start();
-                recordBtn.textContent = 'Dừng Quay';
+                recordBtnText.textContent = 'Dừng Quay';
+                recordBtn.classList.remove('bg-red-500');
+                recordBtn.classList.add('bg-red-600');
                 captureBtn.disabled = true;
                 isRecording = true;
                 
@@ -792,7 +1271,7 @@
         function saveMedia(mediaObject) {
             const detailId = photoForItem.detailId;
             if (!state[detailId]) {
-                state[detailId] = { checked: false, media: [] };
+                state[detailId] = { checked: false, media: [], note: '' };
             }
             state[detailId].media.push(mediaObject);
             localStorage.setItem('checklistState', JSON.stringify(state));
@@ -888,24 +1367,57 @@
             issuesListDiv.innerHTML = '';
             const detectedIssues = [];
 
-            const findIssues = (detail) => {
-                if (state[detail.id] && state[detail.id].checked) {
-                    // Prevent duplicates
+            // Tìm các mục có ghi chú hoặc hình ảnh (không phụ thuộc vào checkbox)
+            const findItemsWithNotes = (detail) => {
+                const itemState = state[detail.id];
+                const hasMedia = itemState && itemState.media && itemState.media.length > 0;
+                const hasNote = itemState && itemState.note && itemState.note.trim() !== '';
+                
+                // Chỉ thêm vào danh sách nếu có ghi chú hoặc hình ảnh
+                if (hasMedia || hasNote) {
+                    // Ngăn trùng lặp
                     if (!detectedIssues.some(issue => issue.id === detail.id)) {
-                        detectedIssues.push({id: detail.id, text: detail.text});
+                        detectedIssues.push({
+                            id: detail.id, 
+                            text: detail.text,
+                            hasMedia: hasMedia,
+                            hasNote: hasNote,
+                            isChecked: itemState && itemState.checked // Trạng thái checkbox riêng biệt
+                        });
                     }
                 }
             };
+
             getCombinedData().forEach(section => {
                 section.items.forEach(item => {
-                    if(item.signs) item.signs.forEach(findIssues);
-                    if(item.symptoms) item.symptoms.forEach(findIssues);
+                    const allCheckItems = [];
+                    if (item.signs) allCheckItems.push(...item.signs);
+                    if (item.symptoms) allCheckItems.push(...item.symptoms);
+                    allCheckItems.forEach(findItemsWithNotes);
                 });
             });
             
-            detectedIssues.forEach(issue => {
-                issuesListDiv.innerHTML += `<label class="flex items-center space-x-3"><input type="checkbox" name="issue" value="${issue.text}" class="form-checkbox h-5 w-5 text-blue-600" checked><span class="text-gray-700">${issue.text}</span></label>`;
-            });
+            if (detectedIssues.length === 0) {
+                issuesListDiv.innerHTML = '<p class="text-gray-500 italic">Chưa có mục nào có ghi chú hoặc hình ảnh để đưa vào báo cáo.</p>';
+            } else {
+                detectedIssues.forEach(issue => {
+                    const mediaIcon = issue.hasMedia ? '<span class="text-blue-500 ml-2" title="Có hình ảnh/video">📷</span>' : '';
+                    const noteIcon = issue.hasNote ? '<span class="text-green-500 ml-1" title="Có ghi chú">📝</span>' : '';
+                    const checkedStatus = issue.isChecked ? '<span class="text-gray-500 ml-2" title="Đã kiểm tra">✓</span>' : '';
+                    
+                    issuesListDiv.innerHTML += `
+                        <label class="flex items-center space-x-3 p-2 rounded border hover:bg-gray-50">
+                            <input type="checkbox" name="issue" value="${issue.text}" class="form-checkbox h-5 w-5 text-blue-600" checked>
+                            <span class="text-gray-700 flex-1">${issue.text}</span>
+                            <div class="flex items-center">
+                                ${checkedStatus}
+                                ${noteIcon}
+                                ${mediaIcon}
+                            </div>
+                        </label>
+                    `;
+                });
+            }
             
             document.getElementById('gemini-modal').classList.remove('hidden');
             document.getElementById('gemini-result-container').classList.add('hidden');
@@ -963,28 +1475,91 @@
             alert('Đã sao chép nội dung vào bộ nhớ tạm!');
         }
 
-        // Scroll-based collapse for progress bar
+        // Simplified scroll-based collapse for progress bar
         let lastScrollY = window.scrollY;
         const stickyPanel = document.querySelector('.sticky-progress');
+        let scrollTimeout;
 
         window.addEventListener('scroll', () => {
             const currentScrollY = window.scrollY;
-
-            // Add a small threshold to prevent flickering at the top
-            if (currentScrollY > lastScrollY && currentScrollY > 100) { 
-                stickyPanel.classList.add('collapsed');
-            } else if (currentScrollY < lastScrollY) {
-                stickyPanel.classList.remove('collapsed');
-            }
-
-            lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+            
+            // Clear previous timeout
+            clearTimeout(scrollTimeout);
+            
+            // Use timeout to debounce scroll events
+            scrollTimeout = setTimeout(() => {
+                if (currentScrollY > 150) { 
+                    stickyPanel.classList.add('collapsed');
+                } else {
+                    stickyPanel.classList.remove('collapsed');
+                }
+                lastScrollY = currentScrollY;
+            }, 100);
         });
+
+        // Apartment Code Editing Functions
+        function editApartmentCode() {
+            const display = document.getElementById('apartment-code-display');
+            const input = document.getElementById('apartment-code-input');
+            
+            // Set input value to current display text
+            input.value = display.textContent;
+            
+            // Hide display, show input
+            display.classList.add('hidden');
+            input.classList.remove('hidden');
+            
+            // Focus and select all text
+            input.focus();
+            input.select();
+        }
+
+        function saveApartmentCode() {
+            const display = document.getElementById('apartment-code-display');
+            const input = document.getElementById('apartment-code-input');
+            
+            // Update display text with input value (or keep original if empty)
+            const newCode = input.value.trim() || display.textContent;
+            display.textContent = newCode;
+            
+            // Save to localStorage
+            localStorage.setItem('apartmentCode', newCode);
+            
+            // Hide input, show display
+            input.classList.add('hidden');
+            display.classList.remove('hidden');
+        }
+
+        function handleApartmentCodeKeydown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveApartmentCode();
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                // Cancel editing - restore original value
+                const display = document.getElementById('apartment-code-display');
+                const input = document.getElementById('apartment-code-input');
+                input.classList.add('hidden');
+                display.classList.remove('hidden');
+            }
+        }
+
+        // Load saved apartment code on page load
+        function loadApartmentCode() {
+            const savedCode = localStorage.getItem('apartmentCode');
+            if (savedCode) {
+                document.getElementById('apartment-code-display').textContent = savedCode;
+            }
+        }
 
         // Initial Load
         const savedState = localStorage.getItem('checklistState');
         if (savedState) { state = JSON.parse(savedState); }
         const savedCustomItems = localStorage.getItem('customChecklistItems');
         if(savedCustomItems) { customItems = JSON.parse(savedCustomItems); }
+        
+        // Load apartment code
+        loadApartmentCode();
         
         renderChecklist();
     </script>
